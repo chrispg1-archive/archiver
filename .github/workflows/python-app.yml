@@ -1,0 +1,36 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: YouTube Archiver
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install --upgrade google-auth google-auth-oauthlib google-api-python-client
+        sudo apt-get update && sudo apt-get install -y ffmpeg
+        pip install yt-dlp
+
+    - name: Decode OAuth files
+      run: |
+        echo "${{ secrets.CLIENT_SECRETS_B64 }}" | base64 -d > client_secrets.json
+        echo "${{ secrets.TOKEN_B64 }}" | base64 -d > token.pickle
+
+    - name: Run mirror script
+      run: python archiver.py
